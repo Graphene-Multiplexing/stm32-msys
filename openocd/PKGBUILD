@@ -1,0 +1,57 @@
+# Maintainer: Andrew Leech <andrew@alelec.net>
+# Contributor: Ray Donnelly <mingw.android@gmail.com>
+# Contributor: Rocco Marco Guglielmi <guglielmir@playembedded.org>
+
+_realname=openocd-git
+pkgbase=mingw-w64-${_realname}
+pkgname="${MINGW_PACKAGE_PREFIX}-${_realname}"
+pkgver=0.11.99
+pkgrel=1
+pkgdesc="OpenOCD - Open On-Chip Debugger (mingw-w64)"
+arch=('any')
+mingw_arch=('mingw64')
+url="https://openocd.org/"
+license=("GPLv2")
+options=('!ccache')
+depends=("${MINGW_PACKAGE_PREFIX}-hidapi"
+         "${MINGW_PACKAGE_PREFIX}-libusb"
+         "${MINGW_PACKAGE_PREFIX}-libusb-compat"
+         "${MINGW_PACKAGE_PREFIX}-libftdi"
+         "${MINGW_PACKAGE_PREFIX}-libjaylink"
+         "${MINGW_PACKAGE_PREFIX}-capstone")
+makedepends=("${MINGW_PACKAGE_PREFIX}-cc"
+             "${MINGW_PACKAGE_PREFIX}-autotools")
+source=("git+https://repo.or.cz/openocd.git")
+sha256sums=("SKIP")
+
+build() {
+  cd "${srcdir}"/openocd
+
+  ./bootstrap
+
+  ./configure \
+      --prefix=${MINGW_PREFIX} \
+      --{build,host}=${MINGW_CHOST} \
+      --disable-dependency-tracking \
+      --disable-werror \
+      --disable-internal-libjaylink \
+      --enable-dummy \
+      --enable-jtag_vpi \
+      --enable-remote-bitbang \
+      --enable-amtjtagaccel \
+      --enable-gw16012 \
+      --enable-parport \
+      --enable-parport-giveio
+
+  make
+}
+
+package() {
+  cd "${srcdir}"/openocd
+  make DESTDIR="${pkgdir}" install
+  install -Dm644 COPYING ${pkgdir}${MINGW_PREFIX}/share/licenses/${_realname}/COPYING
+
+  # bsdtar can't convert non-ascii filenames to UTF-8 when run in
+  # non-UTF-8 locale. It proceeds to pack them anyway embedding raw
+  # binary filenames in the traditional tar headers.
+}
